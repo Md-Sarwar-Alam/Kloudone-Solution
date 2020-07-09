@@ -1,0 +1,141 @@
+1. Create a field on Account named "Number of Contacts". Populate this field with the number of contacts related to an account.
+
+Solution:-
+
+trigger countcontacts on Contact (after insert,after update,after delete,after undelete) 
+{
+  list<id> accid=new list<id>();
+    if (trigger.isinsert||trigger.isupdate||trigger.isundelete)
+    {  
+        for(contact c:trigger.new)
+    {
+        accid.add(c.accountid);
+    }
+    map<id,account> ac=new map<id,account>([select Number_of_Contacts__c,(select id from contacts)from account where id in:accid]);
+    for(contact c1:trigger.new)
+    {
+      account ac1=ac.get(c1.AccountId);  
+            
+      ac1.Number_of_Contacts__c=ac1.contacts.size();
+            
+            
+    }
+update ac.values();
+}
+ if (trigger.isupdate||trigger.isdelete)
+    {  
+        for(contact c:trigger.old)
+    {
+        accid.add(c.accountid);
+    }
+    map<id,account> ac=new map<id,account>([select Number_of_Contacts__c,(select id from contacts)from account where id in:accid]);
+    for(contact c1:trigger.old)
+    {
+      account ac1=ac.get(c1.AccountId);  
+            
+      ac1.Number_of_Contacts__c=ac1.contacts.size();
+            
+            
+    }
+update ac.values();
+}
+}
+
+2. Build a basic lightning component that can query a list of 10 most recently created accounts and display it using a lightning app:-
+
+Solution:-
+
+a>Apex Code:-
+public class recentaccounts {
+    @AuraEnabled
+    public static list<account>getallaccount()
+    {
+        return [select Name from account order by createddate desc limit 10];
+    }
+
+}
+
+b>Component:-
+
+<aura:component implements="force:appHostable" controller="recentaccounts" >
+	<aura:attribute name="accs" type="Account[]"></aura:attribute>
+    
+    <aura:handler name="init" value="{!this}" action="{!c.showaccount}" />
+    <table>
+        <tr>
+            <th>Name</th>
+        </tr>
+    <aura:iteration items="{!v.accs}" var="a">
+        <tr>
+        <td>{!a.Name}</td>
+            
+        </tr>
+        </aura:iteration>
+        </table>
+    
+</aura:component>
+
+c>jsController:-
+
+({
+	
+    
+  showaccount : function(component, event, helper) 
+    {
+      
+      var action=component.get("c.getallaccount");
+        action.setCallback(this,function(response)
+                           {
+                               
+                               var state=response.getState();
+                               console.log(state);
+                               if(state==="SUCCESS")
+                               {
+                                  console.log (response.getReturnValue());
+                                   component.set("v.accs",response.getReturnValue());
+                               }
+                           });
+        
+       $A.enqueueAction(action);
+	}
+   
+})
+
+d>App:-
+
+<aura:application extends="force:slds">
+    <table class="slds-table slds-table_cell-buffer slds-table_bordered">
+        <thead>
+    <tr class="slds-line-height_reset">
+      <th class="" scope="col">
+        <div class="slds-truncate" title="Account Name">Account Name</div>
+      </th>
+    </tr>
+  </thead>
+    <c:tenrecentaccount/>
+</table>    
+    
+</aura:application>
+
+3.3. Make a basic http callout and print the result using system.debug
+
+https://postman-echo.com/get?foo1=bar1&foo2=bar2
+
+
+solution:-
+
+public class basichttpcallout 
+{
+    public static void makeGetCallout() 
+    {
+        Http http = new Http();
+        HttpRequest request = new HttpRequest();
+        request.setEndpoint('https://postman-echo.com/get?foo1=bar1&foo2=bar2');
+         request.setMethod('GET');
+        HttpResponse response = http.send(request);
+        system.debug(response.getBody());
+       }
+
+}
+
+=======================**===================
